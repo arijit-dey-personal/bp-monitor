@@ -829,6 +829,7 @@
   <div class="app-bar-right">
     <span class="app-bar-date" id="today-label"></span>
     <button class="app-bar-settings" onclick="showScreen('settings')" title="Settings">⚙</button>
+    <button class="app-bar-settings" onclick="logout()" title="Logout" style="font-size:17px;">⏻</button>
   </div>
 </header>
 
@@ -1098,6 +1099,30 @@
       <button class="btn-danger" onclick="showClearConfirm()">Clear All Data</button>
     </div>
 
+    <!-- Change PIN -->
+    <div class="settings-section">
+      <div class="settings-section-title">Change PIN</div>
+      <div class="field-group">
+        <div class="field-label">Current PIN</div>
+        <input class="field-input" type="password" id="pin-old" inputmode="numeric" maxlength="6" placeholder="Enter current PIN" autocomplete="current-password">
+      </div>
+      <div class="field-group">
+        <div class="field-label">New PIN (4–6 digits)</div>
+        <input class="field-input" type="password" id="pin-new" inputmode="numeric" maxlength="6" placeholder="Enter new PIN" autocomplete="new-password">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Confirm New PIN</div>
+        <input class="field-input" type="password" id="pin-confirm" inputmode="numeric" maxlength="6" placeholder="Repeat new PIN" autocomplete="new-password">
+      </div>
+      <div id="pin-change-error" style="color:var(--high);font-size:12px;min-height:16px;margin-bottom:8px;"></div>
+      <button class="btn-save-settings" onclick="changePin()">Update PIN</button>
+    </div>
+
+    <!-- Logout -->
+    <div class="settings-section">
+      <button class="btn-danger" style="border-color:#1565C0;color:#1565C0;" onclick="logout()">⏻ &nbsp;Lock / Logout</button>
+    </div>
+
     <!-- About -->
     <div class="settings-section">
       <div class="settings-section-title">About</div>
@@ -1182,6 +1207,46 @@ async function apiPost(endpoint, body = {}, requireAuth = true) {
 function handleAuthExpiry() {
   sessionStorage.removeItem('bp_token');
   location.reload();
+}
+
+function logout() {
+  sessionStorage.removeItem('bp_token');
+  location.reload();
+}
+
+async function changePin() {
+  const errEl  = document.getElementById('pin-change-error');
+  const oldPin = document.getElementById('pin-old').value.trim();
+  const newPin = document.getElementById('pin-new').value.trim();
+  const confPin= document.getElementById('pin-confirm').value.trim();
+
+  errEl.textContent = '';
+
+  if (!oldPin) { errEl.textContent = 'Enter your current PIN.'; return; }
+  if (!/^\d{4,6}$/.test(newPin)) { errEl.textContent = 'New PIN must be 4–6 digits.'; return; }
+  if (newPin !== confPin) { errEl.textContent = 'New PINs do not match.'; return; }
+
+  const btn = document.querySelector('#screen-settings .btn-save-settings[onclick="changePin()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+
+  try {
+    const res  = await apiPost('api/change_pin.php', { old_pin: oldPin, new_pin: newPin });
+    const data = await res.json();
+    if (data.success) {
+      showToast('✓ PIN updated. Please log in again.', 'success');
+      document.getElementById('pin-old').value     = '';
+      document.getElementById('pin-new').value     = '';
+      document.getElementById('pin-confirm').value = '';
+      // Force re-login with new PIN
+      setTimeout(() => logout(), 1500);
+    } else {
+      errEl.textContent = data.error || 'Failed to update PIN.';
+    }
+  } catch (e) {
+    errEl.textContent = 'Connection error. Try again.';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Update PIN'; }
+  }
 }
 
 // ─── DATA FUNCTIONS ──────────────────────────────────────────────────────────
