@@ -20,8 +20,12 @@ $patient = [
     'visitDate'    => preg_match('/^\d{4}-\d{2}-\d{2}$/', $body['visitDate'] ?? '') ? $body['visitDate'] : date('Y-m-d'),
     'caseType'     => substr(strip_tags((string)($body['caseType']   ?? 'New Case')), 0, 50),
     'device'       => substr(strip_tags((string)($body['device']     ?? '')), 0, 200),
-    'instruction'  => substr(strip_tags((string)($body['instruction']?? 'Check on right hand only')), 0, 200),
-    'updatedAt'    => date('c'),
+    'instruction'        => substr(strip_tags((string)($body['instruction']?? 'Check on right hand only')), 0, 200),
+    'morningReminderOn'  => !empty($body['morningReminderOn']),
+    'morningReminderTime'=> preg_match('/^\d{2}:\d{2}$/', $body['morningReminderTime'] ?? '') ? $body['morningReminderTime'] : '08:45',
+    'eveningReminderOn'  => !empty($body['eveningReminderOn']),
+    'eveningReminderTime'=> preg_match('/^\d{2}:\d{2}$/', $body['eveningReminderTime'] ?? '') ? $body['eveningReminderTime'] : '20:45',
+    'updatedAt'          => date('c'),
 ];
 
 if (!is_dir(DATA_DIR)) mkdir(DATA_DIR, 0750, true);

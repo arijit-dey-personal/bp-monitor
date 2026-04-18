@@ -1854,26 +1854,43 @@ function populateSettings() {
   document.getElementById('s-casetype').value    = patient.caseType || '';
   document.getElementById('s-device').value      = patient.device || '';
   document.getElementById('s-instruction').value = patient.instruction || '';
+  document.getElementById('s-mtoggle').checked   = !!patient.morningReminderOn;
+  document.getElementById('s-mtime').value       = patient.morningReminderTime || '08:45';
+  document.getElementById('s-etoggle').checked   = !!patient.eveningReminderOn;
+  document.getElementById('s-etime').value       = patient.eveningReminderTime || '20:45';
 }
 
 async function saveSettings() {
+  const morningOn = document.getElementById('s-mtoggle').checked;
+  const eveningOn = document.getElementById('s-etoggle').checked;
+
+  // Request notification permission if any reminder is being enabled
+  if ((morningOn || eveningOn) && Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+
   const data = {
-    name:        document.getElementById('s-name').value,
-    age:         parseInt(document.getElementById('s-age').value) || 0,
-    gender:      document.getElementById('s-gender').value,
-    uhid:        document.getElementById('s-uhid').value,
-    hospitalSys: parseInt(document.getElementById('s-hsys').value) || 120,
-    hospitalDia: parseInt(document.getElementById('s-hdia').value) || 80,
-    visitDate:   document.getElementById('s-vdate').value,
-    caseType:    document.getElementById('s-casetype').value,
-    device:      document.getElementById('s-device').value,
-    instruction: document.getElementById('s-instruction').value,
+    name:                document.getElementById('s-name').value,
+    age:                 parseInt(document.getElementById('s-age').value) || 0,
+    gender:              document.getElementById('s-gender').value,
+    uhid:                document.getElementById('s-uhid').value,
+    hospitalSys:         parseInt(document.getElementById('s-hsys').value) || 120,
+    hospitalDia:         parseInt(document.getElementById('s-hdia').value) || 80,
+    visitDate:           document.getElementById('s-vdate').value,
+    caseType:            document.getElementById('s-casetype').value,
+    device:              document.getElementById('s-device').value,
+    instruction:         document.getElementById('s-instruction').value,
+    morningReminderOn:   morningOn,
+    morningReminderTime: document.getElementById('s-mtime').value,
+    eveningReminderOn:   eveningOn,
+    eveningReminderTime: document.getElementById('s-etime').value,
   };
   try {
     const ok = await savePatient(data);
     if (ok) {
       patient = data;
       renderPatientCard();
+      scheduleReminders();
       showToast('✓ Settings saved', 'success');
     } else {
       showToast('Save failed', 'error');
@@ -2088,6 +2105,56 @@ async function appInit() {
   updateDateLabel();
   await loadDayData(toDateKey(currentDate));
   checkFirstLaunch();
+  scheduleReminders();
+}
+
+// ─── REMINDERS ───────────────────────────────────────────────────────────────
+let _reminderInterval = null;
+const _firedToday = new Set(); // track which reminders already fired today
+
+function scheduleReminders() {
+  if (_reminderInterval) clearInterval(_reminderInterval);
+  // Check every 30 seconds for accuracy
+  _reminderInterval = setInterval(checkReminders, 30000);
+  checkReminders();
+}
+
+function checkReminders() {
+  if (!patient) return;
+  const now = new Date();
+  const hhmm = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  const today = toDateKey(now);
+
+  // Reset fired set at midnight
+  const mKey = today + '-morning';
+  const eKey = today + '-evening';
+  _firedToday.forEach(k => { if (!k.startsWith(today)) _firedToday.delete(k); });
+
+  if (patient.morningReminderOn && hhmm === patient.morningReminderTime && !_firedToday.has(mKey)) {
+    _firedToday.add(mKey);
+    fireReminder('Morning BP Reading', 'Time to take your morning blood pressure reading!');
+  }
+  if (patient.eveningReminderOn && hhmm === patient.eveningReminderTime && !_firedToday.has(eKey)) {
+    _firedToday.add(eKey);
+    fireReminder('Evening BP Reading', 'Time to take your evening blood pressure reading!');
+  }
+}
+
+function fireReminder(title, body) {
+  // In-app toast always shown
+  showToast('🔔 ' + title, 'success');
+
+  // System notification if permission granted
+  if (Notification.permission === 'granted') {
+    const n = new Notification(title, {
+      body,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 56S8 40 8 22a14 14 0 0128 0 14 14 0 0128 0c0 18-24 34-32 34z" fill="%23FFEBEE" stroke="%23C62828" stroke-width="2"/></svg>',
+      badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="%231565C0"/></svg>',
+      tag: 'bp-reminder',   // replaces previous reminder notification
+      renotify: true,
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  }
 }
 
 // ─── OFFLINE ────────────────────────────────────────────────────────────────
