@@ -807,11 +807,11 @@
 <!-- ── CONFIRM DELETE MODAL ────────────────────────── -->
 <div id="confirm-modal" class="modal-overlay hidden">
   <div class="modal-box">
-    <div class="modal-title">Delete all readings?</div>
-    <div class="modal-body">This will permanently remove all recorded data. This cannot be undone.</div>
+    <div class="modal-title" id="modal-title">Delete all readings?</div>
+    <div class="modal-body" id="modal-body">This will permanently remove all recorded data. This cannot be undone.</div>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
-      <button class="modal-confirm" onclick="confirmClearAll()">Delete All</button>
+      <button class="modal-confirm" id="modal-confirm-btn" onclick="confirmClearAll()">Delete All</button>
     </div>
   </div>
 </div>
@@ -1923,7 +1923,50 @@ async function saveReminders() {
   }
 }
 
-function showClearConfirm() {
+async function showClearConfirm() {
+  // Step 1: count readings
+  let count = 0;
+  try {
+    const all = await loadAllReadings();
+    count = all.length;
+  } catch (e) {}
+
+  if (count === 0) {
+    showToast('No readings to delete.', 'error');
+    return;
+  }
+
+  // Step 2: create & download backup first
+  showLoadingSpinner(true);
+  document.getElementById('modal-confirm-btn').disabled = true;
+
+  let backupOk = false;
+  try {
+    const res  = await apiGet('api/backup_readings.php');
+    const blob = await res.blob();
+    const today = toDateKey(new Date());
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href      = url;
+    a.download  = 'bp_readings_backup_' + today + (blob.type.includes('zip') ? '.zip' : '.json');
+    a.click();
+    URL.revokeObjectURL(url);
+    backupOk = true;
+  } catch (e) {
+    // Backup failed — still allow user to decide
+  } finally {
+    showLoadingSpinner(false);
+  }
+
+  // Step 3: show confirmation modal with backup status
+  const backupMsg = backupOk
+    ? `✓ Backup downloaded (${count} day${count !== 1 ? 's' : ''} of readings).\n\nReady to delete all readings. Patient info, reminder settings and PIN will NOT be touched.`
+    : `⚠ Backup could not be downloaded. Proceed with caution.\n\nThis will delete all ${count} day${count !== 1 ? 's' : ''} of readings. Patient info, reminder settings and PIN will NOT be touched.`;
+
+  document.getElementById('modal-title').textContent = 'Delete all readings?';
+  document.getElementById('modal-body').style.whiteSpace = 'pre-line';
+  document.getElementById('modal-body').textContent = backupMsg;
+  document.getElementById('modal-confirm-btn').disabled = false;
   document.getElementById('confirm-modal').classList.remove('hidden');
 }
 
@@ -1935,9 +1978,13 @@ async function confirmClearAll() {
   closeModal();
   showLoadingSpinner(true);
   try {
-    const all = await loadAllReadings();
-    for (const day of all) { await deleteReading(day.date); }
-    showToast('All readings deleted', 'success');
+    const res  = await apiPost('api/clear_readings.php', {});
+    const data = await res.json();
+    if (data.success) {
+      showToast(`✓ ${data.deleted} day${data.deleted !== 1 ? 's' : ''} of readings deleted`, 'success');
+    } else {
+      showToast(data.error || 'Delete failed', 'error');
+    }
   } catch (e) {
     showToast('Error clearing data', 'error');
   } finally {
