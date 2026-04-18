@@ -1,0 +1,308 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:var(--color-background-tertiary)}
+.phone{max-width:390px;margin:0 auto;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-xl);overflow:hidden;min-height:700px}
+.topbar{background:#1565C0;color:#fff;padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
+.topbar h1{font-size:15px;font-weight:500}
+.topbar span{font-size:12px;opacity:.8}
+.nav{display:flex;border-bottom:0.5px solid var(--color-border-tertiary)}
+.nav button{flex:1;padding:10px 4px;font-size:12px;border:none;background:none;color:var(--color-text-secondary);cursor:pointer;border-bottom:2px solid transparent}
+.nav button.active{color:#1565C0;border-bottom-color:#1565C0;font-weight:500}
+.screen{display:none;padding:0}
+.screen.active{display:block}
+
+.patient-card{background:#E3F2FD;padding:12px 14px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.patient-card .label{font-size:10px;color:#1565C0;font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.patient-card .val{font-size:13px;color:var(--color-text-primary);font-weight:500}
+.patient-card .row{display:flex;gap:16px;margin-bottom:4px}
+.patient-card .field{flex:1}
+
+.day-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 6px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.day-header .date-label{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.day-header .nav-btns{display:flex;gap:6px}
+.day-header .nav-btns button{background:none;border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--color-text-primary)}
+
+.session-block{padding:10px 14px 6px}
+.session-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.session-title.morning{color:#E65100}
+.session-title.evening{color:#1A237E}
+.session-title .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.session-title.morning .dot{background:#E65100}
+.session-title.evening .dot{background:#1A237E}
+
+.reading-row{display:grid;grid-template-columns:56px 1fr 1fr 1fr;gap:6px;align-items:center;margin-bottom:6px}
+.reading-row .time-label{font-size:11px;color:var(--color-text-secondary)}
+.reading-row input{border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:6px 4px;font-size:13px;text-align:center;width:100%;background:var(--color-background-secondary);color:var(--color-text-primary)}
+.reading-row input:focus{outline:none;border-color:#1565C0}
+.reading-row input.high{border-color:var(--color-border-danger);background:var(--color-background-danger)}
+.col-header{display:grid;grid-template-columns:56px 1fr 1fr 1fr;gap:6px;margin-bottom:4px}
+.col-header span{font-size:10px;color:var(--color-text-tertiary);text-align:center}
+
+.divider{height:0.5px;background:var(--color-border-tertiary);margin:6px 14px}
+
+.comment-row{padding:6px 14px 10px}
+.comment-row label{font-size:11px;color:var(--color-text-secondary);display:block;margin-bottom:4px}
+.comment-row textarea{width:100%;border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:6px 8px;font-size:12px;resize:none;background:var(--color-background-secondary);color:var(--color-text-primary);font-family:var(--font-sans)}
+.comment-row textarea:focus{outline:none;border-color:#1565C0}
+
+.save-btn{display:block;margin:0 14px 14px;width:calc(100% - 28px);padding:11px;background:#1565C0;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer}
+.save-btn:active{opacity:.85}
+
+.status-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;margin-left:6px}
+.normal{background:#E8F5E9;color:#2E7D32}
+.elevated{background:#FFF8E1;color:#F57F17}
+.high{background:#FFEBEE;color:#C62828}
+
+.history-list{padding:10px 14px}
+.hist-item{border:0.5px solid var(--color-border-tertiary);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.hist-date{background:var(--color-background-secondary);padding:7px 10px;font-size:12px;font-weight:500;color:var(--color-text-primary);display:flex;justify-content:space-between;align-items:center}
+.hist-sessions{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.hist-session{padding:8px 10px;border-top:0.5px solid var(--color-border-tertiary)}
+.hist-session:nth-child(2){border-left:0.5px solid var(--color-border-tertiary)}
+.hist-session .s-title{font-size:10px;color:var(--color-text-secondary);margin-bottom:4px}
+.hist-reading{font-size:12px;color:var(--color-text-primary);margin-bottom:2px}
+.hist-reading span{color:var(--color-text-secondary);font-size:11px}
+
+.report-btn{margin:14px;width:calc(100% - 28px);padding:11px;background:#00695C;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer}
+
+.report-view{padding:14px;font-size:12px}
+.report-header{text-align:center;border:1px solid #333;padding:8px;margin-bottom:8px}
+.report-header h2{font-size:14px;font-weight:700;margin-bottom:4px;color:var(--color-text-primary)}
+.report-info{font-size:11px;color:var(--color-text-secondary);text-align:left}
+.report-info div{margin-bottom:2px}
+.report-table{width:100%;border-collapse:collapse;font-size:10px;margin-top:8px}
+.report-table th,.report-table td{border:0.5px solid #999;padding:4px 3px;text-align:center;color:var(--color-text-primary)}
+.report-table th{background:var(--color-background-secondary);font-weight:500}
+.report-table .date-col{text-align:left;font-weight:500}
+.empty-cell{color:var(--color-text-tertiary)}
+.back-btn{margin:0 14px 14px;display:block;width:calc(100% - 28px);padding:10px;background:none;border:0.5px solid var(--color-border-secondary);border-radius:8px;font-size:13px;cursor:pointer;color:var(--color-text-primary)}
+</style>
+
+<div class="phone">
+  <div class="topbar">
+    <h1>BP Monitor</h1>
+    <span id="today-display"></span>
+  </div>
+  <div class="nav">
+    <button class="active" onclick="showScreen('log')">Log</button>
+    <button onclick="showScreen('history')">History</button>
+    <button onclick="showScreen('report')">Report</button>
+  </div>
+
+  <div id="screen-log" class="screen active">
+    <div class="patient-card">
+      <div class="row">
+        <div class="field"><div class="label">Patient</div><div class="val" id="pt-name">Mrs. Ruchi Gupta Dey</div></div>
+        <div class="field"><div class="label">Age / Gender</div><div class="val">43 / Female</div></div>
+      </div>
+      <div class="row">
+        <div class="field"><div class="label">Hospital BP</div><div class="val">120/80 mmHg</div></div>
+        <div class="field"><div class="label">UHID</div><div class="val" style="font-size:11px">722604000958</div></div>
+      </div>
+    </div>
+
+    <div class="day-header">
+      <div class="date-label" id="cur-date-label"></div>
+      <div class="nav-btns">
+        <button onclick="changeDay(-1)">&#8249; Prev</button>
+        <button onclick="changeDay(1)">Next &#8250;</button>
+      </div>
+    </div>
+
+    <div class="session-block">
+      <div class="session-title morning"><span class="dot"></span>Morning (6 am – 12 noon)</div>
+      <div class="col-header"><span></span><span>Systolic</span><span>Diastolic</span><span>Pulse</span></div>
+      <div class="reading-row"><div class="time-label">9:00 AM</div><input type="number" id="m1s" placeholder="--" min="60" max="250" oninput="classify('m1')"><input type="number" id="m1d" placeholder="--" min="40" max="150" oninput="classify('m1')"><input type="number" id="m1p" placeholder="--" min="40" max="200"></div>
+      <div class="reading-row"><div class="time-label">9:15 AM</div><input type="number" id="m2s" placeholder="--" min="60" max="250" oninput="classify('m2')"><input type="number" id="m2d" placeholder="--" min="40" max="150" oninput="classify('m2')"><input type="number" id="m2p" placeholder="--" min="40" max="200"></div>
+      <div class="reading-row"><div class="time-label">9:30 AM</div><input type="number" id="m3s" placeholder="--" min="60" max="250" oninput="classify('m3')"><input type="number" id="m3d" placeholder="--" min="40" max="150" oninput="classify('m3')"><input type="number" id="m3p" placeholder="--" min="40" max="200"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="session-block">
+      <div class="session-title evening"><span class="dot"></span>Evening (6 pm – 12 midnight)</div>
+      <div class="col-header"><span></span><span>Systolic</span><span>Diastolic</span><span>Pulse</span></div>
+      <div class="reading-row"><div class="time-label">9:00 PM</div><input type="number" id="e1s" placeholder="--" min="60" max="250" oninput="classify('e1')"><input type="number" id="e1d" placeholder="--" min="40" max="150" oninput="classify('e1')"><input type="number" id="e1p" placeholder="--" min="40" max="200"></div>
+      <div class="reading-row"><div class="time-label">9:15 PM</div><input type="number" id="e2s" placeholder="--" min="60" max="250" oninput="classify('e2')"><input type="number" id="e2d" placeholder="--" min="40" max="150" oninput="classify('e2')"><input type="number" id="e2p" placeholder="--" min="40" max="200"></div>
+      <div class="reading-row"><div class="time-label">9:30 PM</div><input type="number" id="e3s" placeholder="--" min="60" max="250" oninput="classify('e3')"><input type="number" id="e3d" placeholder="--" min="40" max="150" oninput="classify('e3')"><input type="number" id="e3p" placeholder="--" min="40" max="200"></div>
+    </div>
+
+    <div class="comment-row">
+      <label>Comments / Issues</label>
+      <textarea id="comments" rows="2" placeholder="Note any symptoms, dizziness, headache..."></textarea>
+    </div>
+    <button class="save-btn" onclick="saveDay()">Save today's readings</button>
+  </div>
+
+  <div id="screen-history" class="screen">
+    <div class="history-list" id="history-list"></div>
+    <button class="report-btn" onclick="showScreen('report')">Generate report</button>
+  </div>
+
+  <div id="screen-report" class="screen">
+    <div class="report-view" id="report-content"></div>
+    <button class="back-btn" onclick="showScreen('history')">Back to history</button>
+  </div>
+</div>
+
+<script>
+var data = {};
+var days = [];
+var curIdx = 0;
+
+function formatDate(d){
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return d.getDate()+'/'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)+'/'+String(d.getFullYear()).slice(2)+' ('+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+')';
+}
+function dateKey(d){
+  return d.getFullYear()+'-'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)+'-'+(d.getDate()<10?'0':'')+d.getDate();
+}
+function addDays(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
+
+var today = new Date();
+days = [];
+for(var i=0;i<7;i++) days.push(addDays(today,-6+i));
+curIdx = 6;
+
+function init(){
+  document.getElementById('today-display').textContent = today.getDate()+'/'+(today.getMonth()+1)+'/'+today.getFullYear();
+  loadDay();
+}
+
+function loadDay(){
+  var d=days[curIdx];
+  document.getElementById('cur-date-label').textContent = formatDate(d);
+  var k=dateKey(d);
+  var rec=data[k]||{};
+  var fields=['m1s','m1d','m1p','m2s','m2d','m2p','m3s','m3d','m3p','e1s','e1d','e1p','e2s','e2d','e2p','e3s','e3d','e3p'];
+  fields.forEach(function(f){document.getElementById(f).value=rec[f]||'';});
+  document.getElementById('comments').value=rec.comments||'';
+  ['m1','m2','m3','e1','e2','e3'].forEach(function(id){classify(id);});
+}
+
+function changeDay(n){
+  curIdx=Math.max(0,Math.min(days.length-1,curIdx+n));
+  loadDay();
+}
+
+function classify(id){
+  var s=parseInt(document.getElementById(id+'s').value);
+  var d=parseInt(document.getElementById(id+'d').value);
+  var si=document.getElementById(id+'s');
+  var di=document.getElementById(id+'d');
+  si.classList.remove('high');di.classList.remove('high');
+  if(!isNaN(s)&&!isNaN(d)){
+    if(s>=140||d>=90){si.classList.add('high');di.classList.add('high');}
+  }
+}
+
+function bpClass(s,d){
+  if(isNaN(s)||isNaN(d)) return '';
+  if(s<120&&d<80) return '<span class="status-badge normal">Normal</span>';
+  if(s<130&&d<80) return '<span class="status-badge elevated">Elevated</span>';
+  return '<span class="status-badge high">High</span>';
+}
+
+function saveDay(){
+  var k=dateKey(days[curIdx]);
+  var fields=['m1s','m1d','m1p','m2s','m2d','m2p','m3s','m3d','m3p','e1s','e1d','e1p','e2s','e2d','e2p','e3s','e3d','e3p'];
+  var rec={};
+  fields.forEach(function(f){var v=document.getElementById(f).value;if(v)rec[f]=v;});
+  rec.comments=document.getElementById('comments').value;
+  data[k]=rec;
+  alert('Saved for '+formatDate(days[curIdx]));
+  renderHistory();
+}
+
+function renderHistory(){
+  var h=document.getElementById('history-list');
+  var keys=Object.keys(data).sort().reverse();
+  if(keys.length===0){h.innerHTML='<div style="text-align:center;color:var(--color-text-tertiary);padding:24px;font-size:13px">No readings saved yet.</div>';return;}
+  h.innerHTML=keys.map(function(k){
+    var rec=data[k];
+    var d=new Date(k);
+    function rd(s,di,p){
+      if(!s&&!di) return '<span class="empty-cell">--</span>';
+      return (s||'?')+'/'+( di||'?')+' mmHg'+(p?' · '+p+' bpm':'');
+    }
+    var m1=rd(rec.m1s,rec.m1d,rec.m1p);
+    var m2=rd(rec.m2s,rec.m2d,rec.m2p);
+    var m3=rd(rec.m3s,rec.m3d,rec.m3p);
+    var e1=rd(rec.e1s,rec.e1d,rec.e1p);
+    var e2=rd(rec.e2s,rec.e2d,rec.e2p);
+    var e3=rd(rec.e3s,rec.e3d,rec.e3p);
+    var badge=bpClass(parseInt(rec.m1s),parseInt(rec.m1d));
+    return '<div class="hist-item"><div class="hist-date"><span>'+formatDate(d)+'</span>'+badge+'</div>'+
+      '<div class="hist-sessions">'+
+      '<div class="hist-session"><div class="s-title">Morning</div>'+
+        '<div class="hist-reading">9:00 AM: '+m1+'</div>'+
+        '<div class="hist-reading">9:15 AM: '+m2+'</div>'+
+        '<div class="hist-reading">9:30 AM: '+m3+'</div>'+
+      '</div>'+
+      '<div class="hist-session"><div class="s-title">Evening</div>'+
+        '<div class="hist-reading">9:00 PM: '+e1+'</div>'+
+        '<div class="hist-reading">9:15 PM: '+e2+'</div>'+
+        '<div class="hist-reading">9:30 PM: '+e3+'</div>'+
+      '</div></div>'+
+      (rec.comments?'<div style="padding:5px 10px 7px;font-size:11px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary)">Note: '+rec.comments+'</div>':'')+
+      '</div>';
+  }).join('');
+}
+
+function renderReport(){
+  var keys=Object.keys(data).sort();
+  var rc=document.getElementById('report-content');
+  var rows=keys.map(function(k){
+    var rec=data[k];
+    var d=new Date(k);
+    function cell(s,di,p){
+      if(!s) return '<td class="empty-cell">-</td>';
+      var style=(parseInt(s)>=140||parseInt(di)>=90)?'style="color:#C62828"':'';
+      return '<td '+style+'>'+s+'/'+di+(p?'<br><span style="color:var(--color-text-tertiary)">'+p+' bpm</span>':'')+'</td>';
+    }
+    return '<tr>'+
+      '<td class="date-col">'+d.getDate()+'/'+(d.getMonth()+1)+'/'+String(d.getFullYear()).slice(2)+'</td>'+
+      cell(rec.m1s,rec.m1d,rec.m1p)+cell(rec.m2s,rec.m2d,rec.m2p)+cell(rec.m3s,rec.m3d,rec.m3p)+
+      cell(rec.e1s,rec.e1d,rec.e1p)+cell(rec.e2s,rec.e2d,rec.e2p)+cell(rec.e3s,rec.e3d,rec.e3p)+
+      '<td style="font-size:9px;color:var(--color-text-secondary)">'+(rec.comments||'')+'</td>'+
+    '</tr>';
+  }).join('');
+
+  rc.innerHTML='<div class="report-header">'+
+    '<h2>Home Blood Pressure Monitoring</h2>'+
+    '<div class="report-info">'+
+      '<div><b>Name:</b> Mrs. Ruchi Gupta Dey, 43/Female</div>'+
+      '<div><b>UHID:</b> 722604000958</div>'+
+      '<div><b>Hospital BP:</b> 120/80 mmHg &nbsp; <b>C/O:</b> New case</div>'+
+      '<div><b>Device:</b> Omron BP machine (fully automatic) with heart rate</div>'+
+      '<div style="margin-top:4px;font-style:italic;font-size:10px">Check on right hand only</div>'+
+    '</div>'+
+  '</div>'+
+  '<table class="report-table">'+
+  '<thead><tr>'+
+    '<th rowspan="2">Date</th>'+
+    '<th colspan="3">Morning BP with heart rate (6am–12noon)</th>'+
+    '<th colspan="3">Evening BP with heart rate (6pm–12am)</th>'+
+    '<th rowspan="2">Comments</th>'+
+  '</tr><tr>'+
+    '<th>9:00 AM</th><th>9:15 AM</th><th>9:30 AM</th>'+
+    '<th>9:00 PM</th><th>9:15 PM</th><th>9:30 PM</th>'+
+  '</tr></thead>'+
+  '<tbody>'+(rows||'<tr><td colspan="8" style="text-align:center;color:var(--color-text-tertiary);padding:12px">No data recorded yet</td></tr>')+'</tbody>'+
+  '</table>'+
+  '<div style="margin-top:10px;font-size:10px;color:var(--color-text-secondary)">'+
+    '<span style="display:inline-block;width:10px;height:10px;background:#FFEBEE;border:0.5px solid #C62828;margin-right:4px"></span>Red = BP 140/90 or above (High)'+
+  '</div>';
+}
+
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});
+  document.querySelectorAll('.nav button').forEach(function(b,i){b.classList.remove('active');if(['log','history','report'][i]===name)b.classList.add('active');});
+  document.getElementById('screen-'+name).classList.add('active');
+  if(name==='history') renderHistory();
+  if(name==='report') renderReport();
+}
+
+init();
+</script>

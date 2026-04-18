@@ -1,0 +1,39 @@
+{
+    "date": "2026-04-18",
+    "morning": [
+        {
+            "sys": 123,
+            "dia": 96,
+            "pulse": 80
+        },
+        {
+            "sys": null,
+            "dia": null,
+            "pulse": null
+        },
+        {
+            "sys": null,
+            "dia": null,
+            "pulse": null
+        }
+    ],
+    "evening": [
+        {
+            "sys": null,
+            "dia": null,
+            "pulse": null
+        },
+        {
+            "sys": null,
+            "dia": null,
+            "pulse": null
+        },
+        {
+            "sys": null,
+            "dia": null,
+            "pulse": null
+        }
+    ],
+    "comments": "",
+    "savedAt": "2026-04-18T06:29:22+00:00"
+}
