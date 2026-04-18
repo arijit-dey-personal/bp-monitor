@@ -34,10 +34,9 @@ foreach ($files as $file) {
             $pulse = $r['pulse'] ?? null;
             $cls   = '';
             if ($sys !== null && $dia !== null) {
-                if ($sys > 180 || $dia > 120)      $cls = 'Crisis';
-                elseif ($sys >= 140 || $dia >= 90) $cls = 'Stage 2 High';
-                elseif ($sys >= 130 || $dia >= 80) $cls = 'Stage 1 High';
-                elseif ($sys >= 120)               $cls = 'Elevated';
+                if ($sys >= 160 || $dia >= 100)    $cls = 'Stage 2 Hypertension';
+                elseif ($sys >= 140 || $dia >= 90) $cls = 'Stage 1 Hypertension';
+                elseif ($sys >= 120 || $dia >= 80) $cls = 'Prehypertension';
                 else                               $cls = 'Normal';
             }
             fputcsv($out, [

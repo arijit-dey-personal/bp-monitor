@@ -1176,6 +1176,7 @@ let patient = Object.assign({}, DEFAULT_PATIENT);
 let currentScreen = 'log';
 let reportDays = 7;
 let reportData = [];
+let bpClassifications = []; // loaded from classification.json
 
 // ─── API HELPERS ─────────────────────────────────────────────────────────────
 const API_BASE = '';
@@ -1390,23 +1391,48 @@ function downloadCsv() {
 }
 
 // ─── CLASSIFICATION ──────────────────────────────────────────────────────────
+// ─── CLASSIFICATION (driven by classification.json) ──────────────────────────
+async function loadClassifications() {
+  try {
+    const res  = await fetch('classification.json');
+    const data = await res.json();
+    bpClassifications = data.classifications || [];
+  } catch (e) {
+    // Fallback inline definitions if JSON fails to load
+    bpClassifications = [
+      { label:'Stage 2 Hypertension', shortLabel:'Stage 2', color:'#6A1B9A', bgColor:'#F3E5F5', danger:true,  severity:4, logic:'OR',  sys:{gte:160},            dia:{gte:100}           },
+      { label:'Stage 1 Hypertension', shortLabel:'Stage 1', color:'#C62828', bgColor:'#FFEBEE', danger:true,  severity:3, logic:'OR',  sys:{gte:140, lte:159},   dia:{gte:90, lte:99}    },
+      { label:'Prehypertension',      shortLabel:'Pre-HT',  color:'#F57F17', bgColor:'#FFF8E1', danger:false, severity:2, logic:'OR',  sys:{gte:120, lte:139},   dia:{gte:80, lte:89}    },
+      { label:'Normal',               shortLabel:'Normal',  color:'#2E7D32', bgColor:'#E8F5E9', danger:false, severity:1, logic:'AND', sys:{lt:120},              dia:{lt:80}             },
+    ];
+  }
+}
+
+function matchesCondition(value, cond) {
+  if (cond.gte !== undefined && value <  cond.gte) return false;
+  if (cond.lte !== undefined && value >  cond.lte) return false;
+  if (cond.lt  !== undefined && value >= cond.lt)  return false;
+  if (cond.gt  !== undefined && value <= cond.gt)  return false;
+  return true;
+}
+
 function classify(sys, dia) {
   if (sys == null || dia == null || isNaN(sys) || isNaN(dia)) return null;
-  if (sys > 180 || dia > 120) return { label: 'Crisis',    cls: 'chip-crisis' };
-  if (sys >= 140 || dia >= 90) return { label: 'High',     cls: 'chip-high' };
-  if (sys >= 130 || dia >= 80) return { label: 'Stage 1',  cls: 'chip-high' };
-  if (sys >= 120)              return { label: 'Elevated',  cls: 'chip-elevated' };
-  return                              { label: 'Normal',    cls: 'chip-normal' };
+  // Array is ordered highest→lowest severity; return first match
+  for (const cls of bpClassifications) {
+    const sysMatch = matchesCondition(sys, cls.sys || {});
+    const diaMatch = matchesCondition(dia, cls.dia || {});
+    const matched  = cls.logic === 'AND' ? (sysMatch && diaMatch) : (sysMatch || diaMatch);
+    if (matched) return cls;
+  }
+  return null;
 }
 
 function getWorstStatus(readings) {
   let worst = null;
-  const order = ['chip-normal', 'chip-elevated', 'chip-high', 'chip-crisis'];
   for (const r of readings) {
     const c = classify(r.sys, r.dia);
-    if (c) {
-      if (!worst || order.indexOf(c.cls) > order.indexOf(worst.cls)) worst = c;
-    }
+    if (c && (!worst || c.severity > worst.severity)) worst = c;
   }
   return worst;
 }
@@ -1424,9 +1450,11 @@ function onReadingInput(session, idx) {
   if (!isNaN(s) && !isNaN(d)) {
     const cls = classify(s, d);
     if (cls) {
-      chipEl.textContent = cls.label;
-      chipEl.className = 'status-chip ' + cls.cls;
-      if (cls.cls === 'chip-high' || cls.cls === 'chip-crisis') {
+      chipEl.textContent      = cls.shortLabel;
+      chipEl.className        = 'status-chip';
+      chipEl.style.background = cls.bgColor;
+      chipEl.style.color      = cls.color;
+      if (cls.danger) {
         sEl.classList.add('danger');
         dEl.classList.add('danger');
         sEl.classList.remove('shake');
@@ -1436,8 +1464,10 @@ function onReadingInput(session, idx) {
       return;
     }
   }
-  chipEl.textContent = '—';
-  chipEl.className = 'status-chip chip-empty';
+  chipEl.textContent      = '—';
+  chipEl.className        = 'status-chip chip-empty';
+  chipEl.style.background = '';
+  chipEl.style.color      = '';
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
@@ -1521,7 +1551,7 @@ function buildHistoryCard(day, animIdx) {
   const allReadings = [...(day.morning || []), ...(day.evening || [])];
   const worst = getWorstStatus(allReadings);
   const badgeHtml = worst
-    ? `<span class="status-chip ${worst.cls}">${worst.label}</span>`
+    ? `<span class="status-chip" style="background:${worst.bgColor};color:${worst.color}">${worst.shortLabel}</span>`
     : `<span class="status-chip chip-empty">—</span>`;
 
   const displayDate = formatDisplayDateFromKey(day.date);
@@ -1529,7 +1559,7 @@ function buildHistoryCard(day, animIdx) {
   function rdLine(r, time) {
     if (!r || (r.sys == null && r.dia == null)) return `<div class="reading-line empty">${time}: —</div>`;
     const cls = classify(r.sys, r.dia);
-    const high = cls && (cls.cls === 'chip-high' || cls.cls === 'chip-crisis') ? ' high' : '';
+    const high = cls?.danger ? ' high' : '';
     const pulse = r.pulse != null ? ` · ${r.pulse}bpm` : '';
     return `<div class="reading-line${high}">${time}: ${r.sys ?? '?'}/${r.dia ?? '?'}${pulse}</div>`;
   }
@@ -1605,8 +1635,8 @@ function computeStats(readings) {
     allR.forEach(r => { sysSum += r.sys; diaSum += r.dia; count++; });
     const worst = getWorstStatus(allR);
     if (worst) {
-      if (worst.cls === 'chip-high' || worst.cls === 'chip-crisis') highDays++;
-      else if (worst.cls === 'chip-normal') normalDays++;
+      if (worst.danger) highDays++;
+      else if (worst.severity === 1) normalDays++;
     }
   });
   document.getElementById('stat-avg-sys').textContent   = count > 0 ? Math.round(sysSum / count) : '—';
@@ -1787,8 +1817,8 @@ async function renderReport(days) {
 
     function cell(r) {
       if (!r || r.sys == null) return '<td class="empty-cell" style="color:#bbb">—</td>';
-      const isHigh = r.sys >= 140 || r.dia >= 90;
-      return `<td${isHigh ? ' class="cell-high"' : ''}>${r.sys}/${r.dia}<br><span style="font-size:9px;color:#888">${r.pulse != null ? r.pulse+'bpm' : ''}</span></td>`;
+      const cls = classify(r.sys, r.dia);
+      return `<td${cls?.danger ? ' class="cell-high"' : ''}>${r.sys}/${r.dia}<br><span style="font-size:9px;color:#888">${r.pulse != null ? r.pulse+'bpm' : ''}</span></td>`;
     }
 
     sorted.forEach(day => {
@@ -2169,6 +2199,7 @@ async function appInit() {
     String(now.getMonth()+1).padStart(2,'0') + '/' +
     now.getFullYear();
 
+  await loadClassifications();
   patient     = await loadPatient();
   currentDate = new Date();
   renderPatientCard();

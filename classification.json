@@ -1,0 +1,48 @@
+{
+  "classifications": [
+    {
+      "label": "Stage 2 Hypertension",
+      "shortLabel": "Stage 2",
+      "color": "#6A1B9A",
+      "bgColor": "#F3E5F5",
+      "danger": true,
+      "severity": 4,
+      "logic": "OR",
+      "sys": { "gte": 160 },
+      "dia": { "gte": 100 }
+    },
+    {
+      "label": "Stage 1 Hypertension",
+      "shortLabel": "Stage 1",
+      "color": "#C62828",
+      "bgColor": "#FFEBEE",
+      "danger": true,
+      "severity": 3,
+      "logic": "OR",
+      "sys": { "gte": 140, "lte": 159 },
+      "dia": { "gte": 90, "lte": 99 }
+    },
+    {
+      "label": "Prehypertension",
+      "shortLabel": "Pre-HT",
+      "color": "#F57F17",
+      "bgColor": "#FFF8E1",
+      "danger": false,
+      "severity": 2,
+      "logic": "OR",
+      "sys": { "gte": 120, "lte": 139 },
+      "dia": { "gte": 80, "lte": 89 }
+    },
+    {
+      "label": "Normal",
+      "shortLabel": "Normal",
+      "color": "#2E7D32",
+      "bgColor": "#E8F5E9",
+      "danger": false,
+      "severity": 1,
+      "logic": "AND",
+      "sys": { "lt": 120 },
+      "dia": { "lt": 80 }
+    }
+  ]
+}
