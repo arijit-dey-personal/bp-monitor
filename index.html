@@ -1089,6 +1089,7 @@
       <p style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5;">
         Reminder notifications require this page to remain open or be added to your home screen.
       </p>
+      <button class="btn-save-settings" onclick="saveReminders()">Save Reminders</button>
     </div>
 
     <!-- Data management -->
@@ -1861,14 +1862,6 @@ function populateSettings() {
 }
 
 async function saveSettings() {
-  const morningOn = document.getElementById('s-mtoggle').checked;
-  const eveningOn = document.getElementById('s-etoggle').checked;
-
-  // Request notification permission if any reminder is being enabled
-  if ((morningOn || eveningOn) && Notification.permission === 'default') {
-    await Notification.requestPermission();
-  }
-
   const data = {
     name:                document.getElementById('s-name').value,
     age:                 parseInt(document.getElementById('s-age').value) || 0,
@@ -1880,6 +1873,37 @@ async function saveSettings() {
     caseType:            document.getElementById('s-casetype').value,
     device:              document.getElementById('s-device').value,
     instruction:         document.getElementById('s-instruction').value,
+    // carry over existing reminder values so they aren't wiped
+    morningReminderOn:   patient.morningReminderOn   ?? false,
+    morningReminderTime: patient.morningReminderTime  ?? '08:45',
+    eveningReminderOn:   patient.eveningReminderOn   ?? false,
+    eveningReminderTime: patient.eveningReminderTime  ?? '20:45',
+  };
+  try {
+    const ok = await savePatient(data);
+    if (ok) {
+      patient = data;
+      renderPatientCard();
+      showToast('✓ Settings saved', 'success');
+    } else {
+      showToast('Save failed', 'error');
+    }
+  } catch (e) {
+    showToast('Connection error', 'error');
+  }
+}
+
+async function saveReminders() {
+  const morningOn = document.getElementById('s-mtoggle').checked;
+  const eveningOn = document.getElementById('s-etoggle').checked;
+
+  // Request notification permission if enabling a reminder
+  if ((morningOn || eveningOn) && Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+
+  const data = {
+    ...patient,  // preserve all existing patient fields
     morningReminderOn:   morningOn,
     morningReminderTime: document.getElementById('s-mtime').value,
     eveningReminderOn:   eveningOn,
@@ -1889,9 +1913,8 @@ async function saveSettings() {
     const ok = await savePatient(data);
     if (ok) {
       patient = data;
-      renderPatientCard();
       scheduleReminders();
-      showToast('✓ Settings saved', 'success');
+      showToast('✓ Reminders saved', 'success');
     } else {
       showToast('Save failed', 'error');
     }
