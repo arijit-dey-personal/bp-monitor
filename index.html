@@ -183,12 +183,20 @@
 
     .reading-row {
       display: grid;
-      grid-template-columns: 52px 1fr 1fr 1fr auto;
+      grid-template-columns: 78px 1fr 1fr 1fr auto;
       gap: 5px;
       align-items: center;
       padding: 4px 12px;
     }
     .time-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+    .reading-time-input {
+      font-size: 11px; font-family: 'Nunito', sans-serif; font-weight: 600;
+      border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 5px 2px; width: 100%; background: white;
+      color: var(--text-muted); text-align: center;
+      cursor: pointer; -webkit-appearance: none; appearance: none;
+    }
+    .reading-time-input:focus { outline: none; border-color: var(--blue-dark); }
 
     .bp-input {
       border: 1.5px solid var(--border);
@@ -874,21 +882,21 @@
         <span>Time</span><span>Sys</span><span>Dia</span><span>Pulse</span><span>Status</span>
       </div>
       <div class="reading-row">
-        <span class="time-label">9:00 AM</span>
+        <select class="reading-time-input" id="m0t"></select>
         <input class="bp-input" type="number" id="m0s" placeholder="—" min="60" max="250" oninput="onReadingInput('m',0)">
         <input class="bp-input" type="number" id="m0d" placeholder="—" min="40" max="150" oninput="onReadingInput('m',0)">
         <input class="bp-input" type="number" id="m0p" placeholder="—" min="40" max="200">
         <span class="status-chip chip-empty" id="chip-m0">—</span>
       </div>
       <div class="reading-row">
-        <span class="time-label">9:15 AM</span>
+        <select class="reading-time-input" id="m1t"></select>
         <input class="bp-input" type="number" id="m1s" placeholder="—" min="60" max="250" oninput="onReadingInput('m',1)">
         <input class="bp-input" type="number" id="m1d" placeholder="—" min="40" max="150" oninput="onReadingInput('m',1)">
         <input class="bp-input" type="number" id="m1p" placeholder="—" min="40" max="200">
         <span class="status-chip chip-empty" id="chip-m1">—</span>
       </div>
       <div class="reading-row">
-        <span class="time-label">9:30 AM</span>
+        <select class="reading-time-input" id="m2t"></select>
         <input class="bp-input" type="number" id="m2s" placeholder="—" min="60" max="250" oninput="onReadingInput('m',2)">
         <input class="bp-input" type="number" id="m2d" placeholder="—" min="40" max="150" oninput="onReadingInput('m',2)">
         <input class="bp-input" type="number" id="m2p" placeholder="—" min="40" max="200">
@@ -906,21 +914,21 @@
         <span>Time</span><span>Sys</span><span>Dia</span><span>Pulse</span><span>Status</span>
       </div>
       <div class="reading-row">
-        <span class="time-label">9:00 PM</span>
+        <select class="reading-time-input" id="e0t"></select>
         <input class="bp-input" type="number" id="e0s" placeholder="—" min="60" max="250" oninput="onReadingInput('e',0)">
         <input class="bp-input" type="number" id="e0d" placeholder="—" min="40" max="150" oninput="onReadingInput('e',0)">
         <input class="bp-input" type="number" id="e0p" placeholder="—" min="40" max="200">
         <span class="status-chip chip-empty" id="chip-e0">—</span>
       </div>
       <div class="reading-row">
-        <span class="time-label">9:15 PM</span>
+        <select class="reading-time-input" id="e1t"></select>
         <input class="bp-input" type="number" id="e1s" placeholder="—" min="60" max="250" oninput="onReadingInput('e',1)">
         <input class="bp-input" type="number" id="e1d" placeholder="—" min="40" max="150" oninput="onReadingInput('e',1)">
         <input class="bp-input" type="number" id="e1p" placeholder="—" min="40" max="200">
         <span class="status-chip chip-empty" id="chip-e1">—</span>
       </div>
       <div class="reading-row">
-        <span class="time-label">9:30 PM</span>
+        <select class="reading-time-input" id="e2t"></select>
         <input class="bp-input" type="number" id="e2s" placeholder="—" min="60" max="250" oninput="onReadingInput('e',2)">
         <input class="bp-input" type="number" id="e2d" placeholder="—" min="40" max="150" oninput="onReadingInput('e',2)">
         <input class="bp-input" type="number" id="e2p" placeholder="—" min="40" max="200">
@@ -1265,13 +1273,43 @@ async function loadDayData(dateKey) {
   }
 }
 
+const DEFAULT_MORNING_TIMES = ['09:00', '09:15', '09:30'];
+const DEFAULT_EVENING_TIMES = ['21:00', '21:15', '21:30'];
+
+function buildTimeSelect(id, defaultVal, startMin, endMin, step) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = '';
+  for (let total = startMin; total <= endMin; total += step) {
+    const h     = Math.floor(total / 60) % 24;
+    const m     = total % 60;
+    const val   = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+    const ampm  = h >= 12 ? 'PM' : 'AM';
+    const h12   = h % 12 || 12;
+    const label = h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+    const opt   = document.createElement('option');
+    opt.value   = val;
+    opt.textContent = label;
+    if (val === defaultVal) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+function initTimeSelects() {
+  // Morning: 6:00 AM – 12:00 PM, 15-min steps
+  DEFAULT_MORNING_TIMES.forEach((t, i) => buildTimeSelect('m' + i + 't', t, 6 * 60, 12 * 60, 15));
+  // Evening: 6:00 PM – 12:00 AM (midnight), 15-min steps
+  DEFAULT_EVENING_TIMES.forEach((t, i) => buildTimeSelect('e' + i + 't', t, 18 * 60, 24 * 60, 15));
+}
+
 function populateInputs(data) {
   const m = data.morning || [];
   const e = data.evening || [];
   for (let i = 0; i < 3; i++) {
+    document.getElementById('m' + i + 't').value = m[i]?.time || DEFAULT_MORNING_TIMES[i];
     document.getElementById('m' + i + 's').value = m[i]?.sys  != null ? m[i].sys  : '';
     document.getElementById('m' + i + 'd').value = m[i]?.dia  != null ? m[i].dia  : '';
     document.getElementById('m' + i + 'p').value = m[i]?.pulse!= null ? m[i].pulse: '';
+    document.getElementById('e' + i + 't').value = e[i]?.time || DEFAULT_EVENING_TIMES[i];
     document.getElementById('e' + i + 's').value = e[i]?.sys  != null ? e[i].sys  : '';
     document.getElementById('e' + i + 'd').value = e[i]?.dia  != null ? e[i].dia  : '';
     document.getElementById('e' + i + 'p').value = e[i]?.pulse!= null ? e[i].pulse: '';
@@ -1288,11 +1326,13 @@ function collectFormData(dateKey) {
     const ms = document.getElementById('m' + i + 's').value;
     const md = document.getElementById('m' + i + 'd').value;
     const mp = document.getElementById('m' + i + 'p').value;
+    const mt = document.getElementById('m' + i + 't').value;
     const es = document.getElementById('e' + i + 's').value;
     const ed = document.getElementById('e' + i + 'd').value;
     const ep = document.getElementById('e' + i + 'p').value;
-    morning.push({ sys: ms ? parseInt(ms) : null, dia: md ? parseInt(md) : null, pulse: mp ? parseInt(mp) : null });
-    evening.push({ sys: es ? parseInt(es) : null, dia: ed ? parseInt(ed) : null, pulse: ep ? parseInt(ep) : null });
+    const et = document.getElementById('e' + i + 't').value;
+    morning.push({ time: mt || null, sys: ms ? parseInt(ms) : null, dia: md ? parseInt(md) : null, pulse: mp ? parseInt(mp) : null });
+    evening.push({ time: et || null, sys: es ? parseInt(es) : null, dia: ed ? parseInt(ed) : null, pulse: ep ? parseInt(ep) : null });
   }
   return { date: dateKey, morning, evening, comments: document.getElementById('comments').value };
 }
@@ -1564,8 +1604,8 @@ function buildHistoryCard(day, animIdx) {
     return `<div class="reading-line${high}">${time}: ${r.sys ?? '?'}/${r.dia ?? '?'}${pulse}</div>`;
   }
 
-  const mHtml = (day.morning || [{},{},{}]).map((r,i) => rdLine(r, MORNING_SLOTS[i])).join('');
-  const eHtml = (day.evening || [{},{},{}]).map((r,i) => rdLine(r, EVENING_SLOTS[i])).join('');
+  const mHtml = (day.morning || [{},{},{}]).map((r,i) => rdLine(r, r?.time ? formatTime12(r.time) : MORNING_SLOTS[i])).join('');
+  const eHtml = (day.evening || [{},{},{}]).map((r,i) => rdLine(r, r?.time ? formatTime12(r.time) : EVENING_SLOTS[i])).join('');
   const commentHtml = day.comments ? `<div class="history-comments">📝 ${day.comments}</div>` : '';
 
   card.innerHTML = `
@@ -1818,7 +1858,8 @@ async function renderReport(days) {
     function cell(r) {
       if (!r || r.sys == null) return '<td class="empty-cell" style="color:#bbb">—</td>';
       const cls = classify(r.sys, r.dia);
-      return `<td${cls?.danger ? ' class="cell-high"' : ''}>${r.sys}/${r.dia}<br><span style="font-size:9px;color:#888">${r.pulse != null ? r.pulse+'bpm' : ''}</span></td>`;
+      const timeStr = r.time ? `<span style="font-size:9px;color:#888;display:block">${formatTime12(r.time)}</span>` : '';
+      return `<td${cls?.danger ? ' class="cell-high"' : ''}>${timeStr}${r.sys}/${r.dia}<br><span style="font-size:9px;color:#888">${r.pulse != null ? r.pulse+'bpm' : ''}</span></td>`;
     }
 
     sorted.forEach(day => {
@@ -1853,8 +1894,8 @@ async function renderReport(days) {
             <th rowspan="2">Comments</th>
           </tr>
           <tr>
-            <th>9:00AM</th><th>9:15AM</th><th>9:30AM</th>
-            <th>9:00PM</th><th>9:15PM</th><th>9:30PM</th>
+            <th>Rdg 1</th><th>Rdg 2</th><th>Rdg 3</th>
+            <th>Rdg 1</th><th>Rdg 2</th><th>Rdg 3</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -2094,6 +2135,14 @@ function showLoadingSpinner(show) {
   document.getElementById('loading-spinner').classList.toggle('hidden', !show);
 }
 
+function formatTime12(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+}
+
 function toDateKey(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -2192,6 +2241,8 @@ async function checkAuth() {
 }
 
 async function appInit() {
+  initTimeSelects();
+
   // Update today label in app bar
   const now = new Date();
   document.getElementById('today-label').textContent =

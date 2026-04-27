@@ -32,13 +32,14 @@ function sanitizeReading(mixed $r): array {
     $sys   = isset($r['sys'])   && is_numeric($r['sys'])   ? (int)$r['sys']   : null;
     $dia   = isset($r['dia'])   && is_numeric($r['dia'])   ? (int)$r['dia']   : null;
     $pulse = isset($r['pulse']) && is_numeric($r['pulse']) ? (int)$r['pulse'] : null;
+    $time  = isset($r['time'])  && preg_match('/^\d{2}:\d{2}$/', (string)$r['time']) ? (string)$r['time'] : null;
 
     // Validate physiological ranges
     if ($sys   !== null && ($sys   < 60  || $sys   > 250)) $sys   = null;
     if ($dia   !== null && ($dia   < 40  || $dia   > 150)) $dia   = null;
     if ($pulse !== null && ($pulse < 40  || $pulse > 200)) $pulse = null;
 
-    return ['sys' => $sys, 'dia' => $dia, 'pulse' => $pulse];
+    return ['time' => $time, 'sys' => $sys, 'dia' => $dia, 'pulse' => $pulse];
 }
 
 $data = [
@@ -50,8 +51,8 @@ $data = [
 ];
 
 // Pad to exactly 3 slots each session
-while (count($data['morning']) < 3) $data['morning'][] = ['sys'=>null,'dia'=>null,'pulse'=>null];
-while (count($data['evening']) < 3) $data['evening'][] = ['sys'=>null,'dia'=>null,'pulse'=>null];
+while (count($data['morning']) < 3) $data['morning'][] = ['time'=>null,'sys'=>null,'dia'=>null,'pulse'=>null];
+while (count($data['evening']) < 3) $data['evening'][] = ['time'=>null,'sys'=>null,'dia'=>null,'pulse'=>null];
 $data['morning'] = array_slice($data['morning'], 0, 3);
 $data['evening'] = array_slice($data['evening'], 0, 3);
 
