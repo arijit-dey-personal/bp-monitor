@@ -876,7 +876,7 @@
     <div class="session-block">
       <div class="session-header morning">
         <div class="session-title morning">🌅 Morning (6 am – 12 noon)</div>
-        <div class="session-subtitle" id="morning-instruction">Check on right hand only</div>
+        <div class="session-subtitle" id="morning-instruction"></div>
       </div>
       <div class="col-headers">
         <span>Time</span><span>Sys</span><span>Dia</span><span>Pulse</span><span>Status</span>
@@ -908,7 +908,7 @@
     <div class="session-block">
       <div class="session-header evening">
         <div class="session-title evening">🌙 Evening (6 pm – 12 midnight)</div>
-        <div class="session-subtitle" id="evening-instruction">Check on right hand only</div>
+        <div class="session-subtitle" id="evening-instruction"></div>
       </div>
       <div class="col-headers">
         <span>Time</span><span>Sys</span><span>Dia</span><span>Pulse</span><span>Status</span>
@@ -1060,7 +1060,7 @@
       </div>
       <div class="field-group">
         <div class="field-label">Instruction</div>
-        <input class="field-input" type="text" id="s-instruction" placeholder="Check on right hand only">
+        <input class="field-input" type="text" id="s-instruction" placeholder="e.g. Sit quietly for 5 minutes before measuring">
       </div>
       <button class="btn-save-settings" onclick="saveSettings()">Save Patient Info</button>
     </div>
@@ -1175,7 +1175,7 @@ const DEFAULT_PATIENT = {
   uhid: '722604000958', hospitalSys: 120, hospitalDia: 80,
   visitDate: '2026-04-17', caseType: 'New Case',
   device: 'Omron BP Machine Fully Automatic with Heart Rate',
-  instruction: 'Check on right hand only'
+  instruction: ''
 };
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
@@ -1551,7 +1551,7 @@ function renderPatientCard() {
   document.getElementById('pc-age-gender').textContent = (patient.age || '—') + ' / ' + (patient.gender || '—');
   document.getElementById('pc-hosp-bp').textContent = (patient.hospitalSys || '—') + '/' + (patient.hospitalDia || '—') + ' mmHg';
   document.getElementById('pc-uhid').textContent = patient.uhid || '—';
-  const inst = patient.instruction || 'Check on right hand only';
+  const inst = patient.instruction || '';
   document.getElementById('morning-instruction').textContent = inst;
   document.getElementById('evening-instruction').textContent = inst;
 }
@@ -1883,7 +1883,7 @@ async function renderReport(days) {
         <div class="report-info-line"><b>Hospital BP:</b> ${patient.hospitalSys}/${patient.hospitalDia} mmHg</div>
         <div class="report-info-line"><b>Visit Date:</b> ${formatShortDate(patient.visitDate)}  &nbsp; <b>C/O:</b> ${patient.caseType}</div>
         <div class="report-info-line"><b>Device:</b> ${patient.device}</div>
-        <div class="report-info-line" style="font-style:italic;font-size:10px;">(${patient.instruction})</div>
+        ${patient.instruction ? `<div class="report-info-line" style="font-style:italic;font-size:10px;">(${patient.instruction})</div>` : ''}
       </div>
       <table class="report-table">
         <thead>
@@ -1894,8 +1894,8 @@ async function renderReport(days) {
             <th rowspan="2">Comments</th>
           </tr>
           <tr>
-            <th>Rdg 1</th><th>Rdg 2</th><th>Rdg 3</th>
-            <th>Rdg 1</th><th>Rdg 2</th><th>Rdg 3</th>
+            <th>Reading 1</th><th>Reading 2</th><th>Reading 3</th>
+            <th>Reading 1</th><th>Reading 2</th><th>Reading 3</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
